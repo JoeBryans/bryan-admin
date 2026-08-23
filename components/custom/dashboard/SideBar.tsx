@@ -22,8 +22,8 @@ const Links = [
 ]
 const SideBar = () => {
     return (
-        <div className='bg-gray-900 h-full text-gray-50'>
-            <nav className='w-full max-w-7xl mx-auto flex flex-col  items-start gap-8'>
+        <div className='w-max bg-gray-900 h-full text-gray-50'>
+            <nav className=' mx-auto flex flex-col  items-start gap-8'>
                 <Link href='/' className='text-indigo-700 w-full text-center text-2xl font-black'> Bryan </Link>
                 <ul
                     className='flex flex-col items-start gap-4 px-2 md:px-5 '

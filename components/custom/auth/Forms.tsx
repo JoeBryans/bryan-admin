@@ -5,17 +5,17 @@ import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CheckCircle2Icon, Linkedin, Loader2 } from 'lucide-react'
+import { CheckCircle2Icon, Github, Linkedin, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import React, { use, useState } from 'react'
-import { useForm, UseFormReturn } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { VerifyEmail, VerifyToken } from './verify-email'
+import {  VerifyToken } from './verify-email'
 import { toast } from 'sonner'
 import { User } from '@supabase/supabase-js'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-
+import * as FaIcons from "react-icons/fa"
 const formSchema = z.object({
     email: z.email().min(3, 'Email is too short'),
     password: z.string().min(8, 'Password is too short'),
@@ -33,9 +33,9 @@ const signInSchema = z.object({
     phone_number: z.string(),
 })
 
-const Forms = ({ verifyToken }:any) => {
+const Forms = ({ verifyToken }: any) => {
     const [confirmCode, setConfirmCode] = useState(false)
-    
+
     const router = useRouter()
     const path = usePathname()
     const isSignIn = path.includes('sign-in')
@@ -66,14 +66,14 @@ const Forms = ({ verifyToken }:any) => {
     const onsubmit = async (data: z.infer<typeof formSchema | typeof signInSchema>) => {
 
         if (isSignUp) {
-            const { data: userInfo, error:err } = await supabase.from("user").select("*").eq("email", data.email)
+            const { data: userInfo, error: err } = await supabase.from("user").select("*").eq("email", data.email)
             if (err) {
                 console.log(err.message)
                 toast.error(err.message)
             }
-            console.log("user: ",userInfo);
-            
-            if (userInfo!.length>0) {
+            console.log("user: ", userInfo);
+
+            if (userInfo!.length > 0) {
                 toast.error('Email already exists')
             }
             const { data: user, error } = await supabase.auth.signUp({
@@ -87,16 +87,18 @@ const Forms = ({ verifyToken }:any) => {
                         last_name: data.last_name,
                         phone_number: data.phone_number,
                         image: `https://avatar.iran.liara.run/username?username=${data.first_name}+${data.last_name}`,
+                        role: "admin"
+
                     }
                 }
             })
             if (error) {
                 console.log(error)
-            } 
+            }
 
-            const userData=user.user as User
-             
-            const { data: userCreate, error:createErr } = await supabase.from("user").insert([
+            const userData = user.user as User
+
+            const { data: userCreate, error: createErr } = await supabase.from("user").insert([
                 {
                     id: userData.id,
                     email: data.email,
@@ -104,13 +106,13 @@ const Forms = ({ verifyToken }:any) => {
                     last_name: data.last_name,
                     phone: data.phone_number,
                     image: `https://avatar.iran.liara.run/username?username=${data.first_name}+${data.last_name}`,
-                    role:"admin"
+                    role: "admin"
                 }
             ])
             if (createErr) {
                 console.log(createErr)
                 toast.error(createErr.message)
-            }else {
+            } else {
                 toast.success('User created successfully')
                 setConfirmCode(true)
                 // router.push('/auth/verify-email')
@@ -131,7 +133,7 @@ const Forms = ({ verifyToken }:any) => {
             })
             if (error) {
                 console.log(error)
-                
+
             } else {
                 localStorage.setItem('email', data.email)
                 router.push('/auth/sign-in?verifyToken=true')
@@ -146,6 +148,20 @@ const Forms = ({ verifyToken }:any) => {
         const supabase = createClient()
         supabase.auth.signInWithOAuth({
             provider: 'linkedin_oidc',
+            options: {
+                redirectTo: `${window.location.origin}/auth/verify-email`,
+                
+            },
+        })
+    }
+
+
+
+
+    const SignInWithGithub = async () => {
+        const supabase = createClient()
+        supabase.auth.signInWithOAuth({
+            provider: 'github',
             options: {
                 redirectTo: `${window.location.origin}/auth/verify-email`,
             },
@@ -165,22 +181,44 @@ const Forms = ({ verifyToken }:any) => {
                     '
                 >
                     {
-                        isSignUp && !confirmCode&& <div className='flex flex-col gap-4 '>
+                        isSignUp && !confirmCode && <div className='flex flex-col gap-4 '>
+                            <div className='w-full flex items-center gap-4 mx-auto
+                            place-content-center mb-2
+                            '>
+                                <Button
+                                    type='button'
+                                    variant={"destructive"}
+                                    // onClick={SignInWithLinkeInd}
+                                    className='w-28'
+                                >
+                                    <FaIcons.FaGoogle className='w-5 h-5' />
+                                </Button>
+                                <Button
+                                    type='button'
+                                    variant={"primary"}
+                                    onClick={SignInWithLinkeInd}
+                                    className='w-28'
+                                >
+                                    <FaIcons.FaLinkedin className='w-5 h-5' />
+                                </Button>
+                                <Button
+                                    type='button'
+                                    onClick={SignInWithGithub}
+                                    className='w-28'
+
+                                >
+                                    <FaIcons.FaGithub className='w-5 h-5' />
+                                </Button>
+                            </div>
                             <div className='flex justify-between items-center w-full gap-4'>
-                                <div className='flex items-center gap-4'>
-                                    <Button
-                                        type='button'
-                                        onClick={SignInWithLinkeInd}
-                                    >
-                                        <Linkedin className='w-5 h-5' />
-                                    </Button>
-                                </div>
+                                
                                 <InputField form={form} label='First Name' placeholder='First Name' type='text' name='first_name' className="w-md" />
                                 <InputField form={form} label='Last Name' placeholder='Last Name' type='text' name='last_name' className="w-md " />
                             </div>
                             <InputField form={form} label='Email' placeholder='Email' type='email' name='email' />
+                            <InputField form={form} label='Phone ' placeholder='+44' type='text' name='phone_number' />
                             <InputField form={form} label='Password' placeholder='Password' type='password' name='password' />
-                            <InputField form={form} label='+44 ' placeholder='phone number' type='text' name='phone_number' />
+
                             <Button
                                 variant={"primary"}
                                 type='submit'
@@ -193,18 +231,47 @@ const Forms = ({ verifyToken }:any) => {
                     }
                     {
                         isSignUp && confirmCode && <Alert
-                        className=''
+                            className=''
                         >
                             <CheckCircle2Icon />
                             <AlertTitle>Success! Your account has been created</AlertTitle>
                             <AlertDescription>
-                               Your account has been created successfully. Please check your email for the confirmation link.
+                                Your account has been created successfully. Please check your email for the confirmation link.
                             </AlertDescription>
-                            
+
                         </Alert>
                     }
                     {
-                        isSignIn && !verifyToken&&<div className='flex flex-col gap-4 '>
+                        isSignIn && !verifyToken && <div className='flex flex-col gap-4 '>
+                            <div className='w-full flex items-center gap-4 mx-auto
+                            place-content-center mb-2
+                            '>
+                                <Button
+                                    type='button'
+                                    variant={"destructive"}
+                                    // onClick={SignInWithLinkeInd}
+                                    className='w-28'
+                                >
+                                    <FaIcons.FaGoogle className='w-5 h-5' />
+                                </Button>
+                                <Button
+                                    type='button'
+                                    variant={"primary"}
+                                    onClick={SignInWithLinkeInd}
+                                    className='w-28'
+                                >
+                                    <FaIcons.FaLinkedin className='w-5 h-5' />
+                                </Button>
+                                <Button
+                                    type='button'
+                                    onClick={SignInWithGithub}
+                                    className='w-28'
+
+                                >
+                                    <FaIcons.FaGithub className='w-5 h-5' />
+                                </Button>
+                            </div>
+
                             <InputField form={form} label='Email' placeholder='Email' type='email' name='email' />
                             <Button
                                 variant={"primary"}
@@ -216,12 +283,12 @@ const Forms = ({ verifyToken }:any) => {
                                 <p>Don&apos;t have an account? <Link href='/auth/sign-up'
                                     className='text-indigo-700 '
                                 >Sign Up
-                                
+
                                 </Link></p>
 
                             </div>
                         </div>
-                       
+
                     }
                     {
                         isSignIn && verifyToken && <VerifyToken />
